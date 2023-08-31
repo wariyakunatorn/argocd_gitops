@@ -1,0 +1,7 @@
+gitops:
+  repo: https://github.com/wariyakunatorn/argocd_gitops.git
+  revision: main
+stacks:
+  - name: bootstrap
+    namespace: argocd  # Override default value
+  - name: apps

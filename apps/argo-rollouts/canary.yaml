@@ -1,0 +1,87 @@
+apiVersion: argoproj.io/v1alpha1               # Create a rollout resource
+kind: Rollout
+metadata:
+  name: rollout-ref-deployment-canary
+spec:
+  replicas: 5
+  selector:
+    matchLabels:
+      app: rollout-ref-deployment-canary
+  workloadRef:                                 # Reference an existing Deployment using workloadRef field
+    apiVersion: apps/v1
+    kind: Deployment
+    name: rollout-ref-deployment-canary
+  strategy:
+    canary: #Indicates that the rollout should use the Canary strategy
+      maxSurge: "25%"
+      maxUnavailable: 0
+      steps:
+      - setWeight: 10
+      - pause:
+          duration: 1h # 1 hour
+      - setWeight: 20
+      - pause: {} # pause indefinitely
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/instance: rollout-canary
+  name: rollout-ref-deployment-canary
+spec:
+  replicas: 0                                  # Scale down existing deployment
+  selector:
+    matchLabels:
+      app: rollout-ref-deployment-canary
+  template:
+    metadata:
+      labels:
+        app: rollout-ref-deployment-canary
+    spec:
+      containers:
+        - name: rollouts-demo
+          image: argoproj/rollouts-demo:green
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: rollout-canary
+spec:
+  selector:
+    app: rollout-ref-deployment-canary
+  ports:
+  # Default port used by the image
+  - port: 8080
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: rollout-canary
+spec:
+  selector:
+    app: rollout-ref-deployment-canary
+  ports:
+  # Default port used by the image
+  - port: 8080
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: canary-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+spec:
+  rules:
+  - host: localhost
+    http:
+      paths:
+      - pathType: Prefix
+        path: /canary(/|$)(.*)
+        backend:
+          service:
+            name: rollout-canary
+            port:
+              number: 8080
+---

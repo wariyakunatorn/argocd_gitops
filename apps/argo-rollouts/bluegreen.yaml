@@ -1,0 +1,98 @@
+apiVersion: argoproj.io/v1alpha1               # Create a rollout resource
+kind: Rollout
+metadata:
+  name: rollout-ref-deployment
+spec:
+  replicas: 5
+  selector:
+    matchLabels:
+      app: rollout-ref-deployment
+  workloadRef:                                 # Reference an existing Deployment using workloadRef field
+    apiVersion: apps/v1
+    kind: Deployment
+    name: rollout-ref-deployment
+  strategy:
+    blueGreen: 
+      # activeService specifies the service to update with the new template hash at time of promotion.
+      # This field is mandatory for the blueGreen update strategy.
+      activeService: rollout-bluegreen-active
+      # previewService specifies the service to update with the new template hash before promotion.
+      # This allows the preview stack to be reachable without serving production traffic.
+      # This field is optional.
+      previewService: rollout-bluegreen-preview
+      # autoPromotionEnabled disables automated promotion of the new stack by pausing the rollout
+      # immediately before the promotion. If omitted, the default behavior is to promote the new
+      # stack as soon as the ReplicaSet are completely ready/available.
+      # Rollouts can be resumed using: `kubectl argo rollouts promote ROLLOUT`
+      autoPromotionEnabled: false
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/instance: rollout-canary
+  name: rollout-ref-deployment
+spec:
+  replicas: 0                                  # Scale down existing deployment
+  selector:
+    matchLabels:
+      app: rollout-ref-deployment
+  template:
+    metadata:
+      labels:
+        app: rollout-ref-deployment
+    spec:
+      containers:
+        - name: rollouts-demo
+          image: argoproj/rollouts-demo:green
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: rollout-bluegreen-active
+spec:
+  selector:
+    app: rollout-ref-deployment
+  ports:
+  # Default port used by the image
+  - port: 8080
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: rollout-bluegreen-preview
+spec:
+  selector:
+    app: rollout-ref-deployment
+  ports:
+  # Default port used by the image
+  - port: 8080
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: example-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+spec:
+  rules:
+  - host: localhost
+    http:
+      paths:
+      - pathType: Prefix
+        path: /active(/|$)(.*)
+        backend:
+          service:
+            name: rollout-bluegreen-active
+            port:
+              number: 8080
+      - pathType: Prefix
+        path: /preview(/|$)(.*)
+        backend:
+          service:
+            name: rollout-bluegreen-preview
+            port:
+              number: 8080
+---
