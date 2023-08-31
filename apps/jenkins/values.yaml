@@ -1,8 +1,8 @@
 jenkins:
   controller:
     tag: "2.375.4-jdk11"
-    If you set this prefix and use ingress controller then you might want to set the ingress path below
-    jenkinsUriPrefix: "/jenkins"
+    # If you set this prefix and use ingress controller then you might want to set the ingress path below
+    # jenkinsUriPrefix: "/jenkins"
     ingress:
       enabled: true
       # Override for the default paths that map requests to the backend
