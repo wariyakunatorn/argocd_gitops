@@ -1,6 +1,5 @@
 sonarqube:
   edition: "community"
- env:
   ingress:
     enabled: true
     # Used to create an Ingress record.
