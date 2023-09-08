@@ -17,7 +17,7 @@ argo-cd:
     metrics: &metrics
       enabled: true
       serviceMonitor:
-        enabled: true
+        enabled: false
   dex:
     enabled: false
   controller:
