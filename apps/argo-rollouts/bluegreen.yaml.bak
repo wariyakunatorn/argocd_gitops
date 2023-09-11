@@ -44,7 +44,7 @@ spec:
     spec:
       containers:
         - name: rollouts-demo
-          image: argoproj/rollouts-demo:green
+          image: argoproj/rollouts-demo:blue
           imagePullPolicy: Always
           ports:
             - containerPort: 8080
@@ -70,26 +70,37 @@ spec:
   ports:
   # Default port used by the image
   - port: 8080
+---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: example-ingress
+  name: ingress-rollout-bluegreen-active
   annotations:
-    nginx.ingress.kubernetes.io/rewrite-target: /$2
 spec:
   rules:
-  - host: localhost
+  - host: blue.127-0-0-1.nip.io
     http:
       paths:
       - pathType: Prefix
-        path: /active(/|$)(.*)
+        path: /
         backend:
           service:
             name: rollout-bluegreen-active
             port:
               number: 8080
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ingress-rollout-bluegreen-preview
+  annotations:
+spec:
+  rules:
+  - host: green.127-0-0-1.nip.io
+    http:
+      paths:
       - pathType: Prefix
-        path: /preview(/|$)(.*)
+        path: /
         backend:
           service:
             name: rollout-bluegreen-preview
