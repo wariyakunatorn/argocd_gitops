@@ -18,11 +18,38 @@ argo-cd:
       enabled: true
       serviceMonitor:
         enabled: false
+    volumeMounts:
+      - name: custom-ca-certificates
+        mountPath: /etc/ssl/certs/custom-ca-certificates.crt
+        subPath: custom-ca-certificates.crt
+    volumes:
+      - name: custom-ca-certificates
+        secret:
+          defaultMode: 420
+          secretName: custom-ca-certificates
   dex:
     enabled: false
   controller:
     metrics: *metrics
+    volumeMounts:
+      - name: custom-ca-certificates
+        mountPath: /etc/ssl/certs/custom-ca-certificates.crt
+        subPath: custom-ca-certificates.crt
+    volumes:
+      - name: custom-ca-certificates
+        secret:
+          defaultMode: 420
+          secretName: custom-ca-certificates
   repoServer:
     metrics: *metrics
+    volumeMounts:
+      - name: custom-ca-certificates
+        mountPath: /etc/ssl/certs/custom-ca-certificates.crt
+        subPath: custom-ca-certificates.crt
+    volumes:
+      - name: custom-ca-certificates
+        secret:
+          defaultMode: 420
+          secretName: custom-ca-certificates
   redis:
     metrics: *metrics
